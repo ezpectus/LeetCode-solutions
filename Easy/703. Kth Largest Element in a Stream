@@ -1,31 +1,82 @@
-public class KthLargest {
-     private int k;
-     private PriorityQueue<int,int> minheap;
-          
-    public KthLargest(int k, int[] nums) {
+
+
+##  Task Explanation (ENG, как для README или LeetCode обсуждения):
+
+You're given a stream of numbers.
+You need to continuously track the **k-th largest** element in the stream.
+
+###  Goal:
+
+Design a class `KthLargest` that:
+
+* Stores the current stream.
+* After each `.Add(val)`, returns the k-th largest element **so far**.
+
+---
+
+##  Core Idea:
+
+We use a **MinHeap** of size `k`.
+
+* The heap will always store the **top k largest elements**.
+* The **smallest** of them (heap's top) is the **k-th largest overall**.
+* When a new number comes:
+
+  * If heap size < `k` → just add.
+  * Else, if new number > heap top → remove top, insert new value.
+  * If not → ignore (because it's not in the top k).
+
+This way, we **always know the k-th largest** number.
+
+---
+
+##  Time Complexity:
+
+* `Add(val)` runs in **O(log k)**.
+* Initial construction runs in **O(n log k)** for `n` elements.
+
+---
+
+##  Code with Comments (C#):
+
+```csharp
+public class KthLargest
+{
+    private int k;
+    private PriorityQueue<int, int> minheap; // MinHeap: item = val, priority = val
+
+    public KthLargest(int k, int[] nums)
+    {
         this.k = k;
-        minheap = new PriorityQueue<int,int>();
+        minheap = new PriorityQueue<int, int>();
 
-     foreach(int num in nums){
-            Add(num);
-       }
+        // Add all initial numbers to the heap
+        foreach (int num in nums)
+        {
+            Add(num); // Reuse the Add logic
+        }
     }
-    
-    public int Add(int val) {
-          if(minheap.Count <  k){
-            minheap.Enqueue(val,val);
-          } else if(val  > minheap.Peek()){
-            minheap.Dequeue();
-            minheap.Enqueue(val,val);
 
-          }
-    return minheap.Peek();
+    public int Add(int val)
+    {
+        if (minheap.Count < k)
+        {
+            // Still building the heap → add directly
+            minheap.Enqueue(val, val);
+        }
+        else if (val > minheap.Peek())
+        {
+            // New number is bigger than current k-th largest
+            minheap.Dequeue();        // Remove smallest
+            minheap.Enqueue(val, val); // Insert the new value
+        }
 
+        // Return the k-th largest (i.e., heap top)
+        return minheap.Peek();
     }
 }
+```
 
-/**
- * Your KthLargest object will be instantiated and called as such:
- * KthLargest obj = new KthLargest(k, nums);
- * int param_1 = obj.Add(val);
- */
+
+
+
