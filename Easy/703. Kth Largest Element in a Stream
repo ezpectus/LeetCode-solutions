@@ -1,0 +1,31 @@
+public class KthLargest {
+     private int k;
+     private PriorityQueue<int,int> minheap;
+          
+    public KthLargest(int k, int[] nums) {
+        this.k = k;
+        minheap = new PriorityQueue<int,int>();
+
+     foreach(int num in nums){
+            Add(num);
+       }
+    }
+    
+    public int Add(int val) {
+          if(minheap.Count <  k){
+            minheap.Enqueue(val,val);
+          } else if(val  > minheap.Peek()){
+            minheap.Dequeue();
+            minheap.Enqueue(val,val);
+
+          }
+    return minheap.Peek();
+
+    }
+}
+
+/**
+ * Your KthLargest object will be instantiated and called as such:
+ * KthLargest obj = new KthLargest(k, nums);
+ * int param_1 = obj.Add(val);
+ */
