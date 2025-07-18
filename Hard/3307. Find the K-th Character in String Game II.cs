@@ -1,5 +1,5 @@
 /*
-    Problem: Kth Character After Certain Operations (LeetCode #2866)
+    Problem: Kth Character After Certain Operations (LeetCode #3307)
 
     Time complexity: O(n)
     Space complexity: O(n)
