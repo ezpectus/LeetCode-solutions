@@ -1,5 +1,5 @@
 /*
-    Problem: Count of Possible Strings Given Group Limits (LeetCode #2846)
+    Problem: Count of Possible Strings Given Group Limits (LeetCode #3333)
 
     Time complexity: O(n + k^2), where n = word length and k = group constraint
     Space complexity: O(k)
