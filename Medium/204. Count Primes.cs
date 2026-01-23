@@ -6,6 +6,7 @@ public class Solution {
          */
         if (n == 0 || n == 1) return 0;
 
+
         /**
          * Create a boolean array where index i represents whether i is prime.
          * Initialize all entries to 'true'. We'll mark non-primes as 'false'.
