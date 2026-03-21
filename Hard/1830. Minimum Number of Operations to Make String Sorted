@@ -1,0 +1,159 @@
+# 1830. Minimum Number of Operations to Make String Sorted
+## O(n × 26) — Permutation Rank via Combinatorics
+
+---
+
+## Problem Statement
+
+- Each operation = "previous permutation" (find rightmost descent, swap, reverse suffix).
+- Return how many operations until sorted = **lexicographic rank** of `s` mod 10⁹+7.
+
+---
+
+## Core Idea — Permutation Rank Formula
+
+**Key insight**: each operation transforms `s` into the lexicographically previous permutation. So the answer = number of permutations that come before `s` = its 0-indexed rank.
+
+**Formula**: for each position `i`, count permutations of `s[i..n-1]` that start with a character **strictly less than** `s[i]` (while `s[0..i-1]` is already fixed):
+
+```
+contribution_i = (# chars in s[i..n-1] that are < s[i]) × (n-i-1)! / ∏ freq[j]!
+```
+
+Where `freq` = frequency of each character in `s[i..n-1]` **including** `s[i]` itself.
+
+**Critical**: compute `smaller` and `perms` using `freq` **before removing** `s[i]`, then remove `s[i]` afterwards.
+
+**Why?**  
+Permutations of `s[i..n-1]` starting with char `c < s[i]`:
+```
+= ∑_{c < s[i]} freq[c] × (n-i-2)! / (freq[c]-1)! / ∏_{j≠c} freq[j]!
+= (n-i-1)! × ∑_{c<s[i]} freq[c] / ∏_j freq[j]!
+= smaller × (n-i-1)! / ∏_j freq[j]!
+```
+
+where `freq` is the **full** remaining frequency (before removing `s[i]`).
+
+---
+
+## Full Optimal Implementation (C#)
+
+```csharp
+public class Solution {
+    const int MOD = 1_000_000_007;
+
+    public int MakeStringSorted(string s) {
+        int n = s.Length;
+
+        long[] fact = new long[n+1], invFact = new long[n+1];
+        fact[0] = 1;
+        for (int i = 1; i <= n; i++) fact[i] = fact[i-1] * i % MOD;
+        invFact[n] = ModPow(fact[n], MOD-2, MOD);
+        for (int i = n-1; i >= 0; i--) invFact[i] = invFact[i+1] * (i+1) % MOD;
+
+        int[] freq = new int[26];
+        foreach (char c in s) freq[c-'a']++;
+
+        long res = 0;
+        for (int i = 0; i < n; i++) {
+            int ci = s[i] - 'a';
+
+            // Count chars in s[i..n-1] that are < s[i] (using freq BEFORE removing s[i])
+            int smaller = 0;
+            for (int j = 0; j < ci; j++) smaller += freq[j];
+
+            // Perms of s[i..n-1] starting with char < s[i]
+            // = smaller × (n-i-1)! / ∏ freq[j]!
+            long perms = fact[n-i-1];
+            foreach (int f in freq) perms = perms * invFact[f] % MOD;
+
+            res = (res + smaller * perms) % MOD;
+
+            freq[ci]--; // NOW remove s[i] from freq
+        }
+
+        return (int)res;
+    }
+
+    long ModPow(long b, long e, long mod) {
+        long r = 1; b %= mod;
+        for (; e > 0; e >>= 1) { if ((e&1)==1) r=r*b%mod; b=b*b%mod; }
+        return r;
+    }
+}
+```
+
+---
+
+## Complexity
+
+| **Metric** | **Value** | **Notes** |
+|---|---|---|
+| **Time** | **O(n × 26)** | n positions × 26-char freq scan per position |
+| **Space** | **O(n)** | Factorial arrays |
+
+---
+
+## The Critical Bug — Order of Operations
+
+**Wrong** (original, off-by-one in denominator):
+```
+freq[ci]--;          // remove s[i] first
+smaller = sum(freq < s[i])
+perms = (n-i-1)! / prod(freq!)   // freq doesn't include s[i] anymore
+```
+
+This computes perms of `s[i+1..n-1]` (the suffix excluding s[i]), then multiplies by `smaller` — but the denominator is wrong because it no longer accounts for s[i].
+
+**Correct** (compute first, remove after):
+```
+smaller = sum(freq < s[i])       // freq still includes s[i]
+perms = (n-i-1)! / prod(freq!)   // includes freq[ci] in denominator
+freq[ci]--;                       // remove s[i] only after
+```
+
+The denominator `∏ freq[j]!` divides out ALL characters in `s[i..n-1]`, including the current `s[i]`. This gives exactly `(n-i-1)! × smaller / ∏freq[j]!` which counts what we want.
+
+**Example**: `"bba"`, `i=0`, `s[0]='b'`, `freq={a:1, b:2}`:
+- `smaller = freq[a] = 1`
+- `perms = 2! / (1! × 2!) = 1` ← correct (arrangements of "ba" starting with 'a' = just "ab")
+- contribution = `1 × 1 = 1`
+
+With the wrong order: `freq={a:1,b:1}`, `perms = 2!/1!/1! = 2` → contribution = 2 ← wrong.
+
+---
+
+## Example Walkthrough
+
+**`s = "cba"`**, n=3, freq={a:1,b:1,c:1}
+
+| i | s[i] | smaller (< s[i]) | perms | contribution | freq after |
+|---|------|-----------------|-------|-------------|------------|
+| 0 | c | a:1+b:1=2 | 2!/(1!1!1!)=1 | 2 | {a:1,b:1,c:0} |
+| 1 | b | a:1=1 | 1!/(1!1!0!)=1 | 1 | {a:1,b:0,c:0} |
+| 2 | a | 0 | 0!/...=1 | 0 | {a:0,...} |
+
+Total = 2+1+0 = **5** ✓
+
+---
+
+## Pitfalls & Edge Cases
+
+- **`freq` must include `s[i]` when computing `perms`** — see critical bug above
+- **Modular inverse**: use Fermat's little theorem since MOD is prime
+- **Build `invFact` from top down**: `invFact[n] = pow(fact[n], MOD-2, MOD)`, then `invFact[i] = invFact[i+1] × (i+1)`
+- **`fact[n-i-1]`**: for last position `i=n-1`, this is `fact[-1]` → use `fact[0]=1` (no arrangements of empty suffix)
+
+---
+
+## Key Takeaway
+
+"Operations to sort = previous permutation steps = lexicographic rank":
+
+```
+rank = ∑ᵢ smaller(s[i]) × (n-i-1)! / ∏_j freq_before[j]!
+```
+
+**Order matters**: use `freq` including `s[i]` for both `smaller` and the denominator, then remove `s[i]` afterwards. This correctly counts permutations of the full `s[i..n-1]` that start with a smaller character.
+
+---
