@@ -1,0 +1,65 @@
+# 2924. Find Champion II
+## O(n + m) — Find Unique Node with In-Degree 0
+
+---
+
+## Problem Statement
+
+- DAG where edge `a → b` means `a` is stronger than `b`.
+- Champion = team with no team stronger than it = node with **in-degree 0**.
+- Return the champion if unique, else -1.
+
+---
+
+## Core Idea — In-Degree 0 = No One Beats Them
+
+A team has a directed edge pointing **to it** for each team that is stronger. In-degree = 0 means nobody is stronger → candidate for champion. If exactly one such team exists → that's the unique champion. If multiple nodes have in-degree 0 → no unique champion → -1.
+
+---
+
+## Full Optimal Implementation (C#)
+
+```csharp
+public class Solution {
+    public int FindChampion(int n, int[][] edges) {
+        int[] indegree = new int[n];
+        foreach (var e in edges) indegree[e[1]]++;
+
+        int champion = -1;
+        for (int i = 0; i < n; i++) {
+            if (indegree[i] == 0) {
+                if (champion != -1) return -1; // second one found
+                champion = i;
+            }
+        }
+        return champion;
+    }
+}
+```
+
+---
+
+## Complexity
+
+| **Metric** | **Value** |
+|---|---|
+| **Time** | **O(n + m)** |
+| **Space** | **O(n)** |
+
+---
+
+## Example Walkthrough
+
+**Example 2**: `n=4, edges=[[0,2],[1,3],[1,2]]`
+
+In-degrees: `[0, 0, 2, 1]`
+
+Nodes with in-degree 0: `{0, 1}` → two candidates → **-1** ✓
+
+---
+
+## Key Takeaway
+
+In a DAG tournament, the champion has no incoming edges (in-degree 0). Unique → return it. Multiple → -1.
+
+---
